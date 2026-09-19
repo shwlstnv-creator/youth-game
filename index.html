@@ -207,6 +207,7 @@ p{margin:0;line-height:1.65;color:var(--text-dim);max-width:60ch}
   position:absolute;bottom:10px;left:0;right:0;text-align:center;
   font-family:var(--mono);font-size:11px;color:#7A7061;
 }
+.print .group{font-family:var(--body);font-size:15px;font-weight:600;color:#6B6357;letter-spacing:.02em;margin:0 0 4px}
 .print .name{font-family:var(--display);font-weight:800;color:var(--paper-ink);font-size:clamp(36px,9vw,58px);line-height:1;margin:0}
 .print .why{font-size:15.5px;line-height:1.6;color:#4A443C;margin:0}
 .print .meta{
@@ -370,6 +371,7 @@ p{margin:0;line-height:1.65;color:var(--text-dim);max-width:60ch}
       <div class="print" id="print">
         <div class="frame" id="resFrame"></div>
         <div>
+          <p class="group off" id="resGroup"></p>
           <p class="name" id="resName">—</p>
         </div>
         <p class="why" id="resWhy"></p>
@@ -414,7 +416,8 @@ p{margin:0;line-height:1.65;color:var(--text-dim);max-width:60ch}
     </div>
     <p class="admin-note" id="bulkReport"></p>
     <div class="slots" id="slots"></div>
-    <p class="admin-note">이름과 설명은 칸을 눌러 바로 고칠 수 있습니다. 사진과 이름은 <b>이 태블릿의 브라우저</b>에 저장되므로, 행사에 쓸 기기에서 미리 등록해 두세요.</p>
+    <p class="admin-note"><b>모든 기기에 함께 적용하려면</b> GitHub 저장소에 <span class="mono">photos</span> 폴더를 만들고 <span class="mono">차은우.jpg</span> 처럼 <b>이름과 똑같은 파일명</b>으로 사진을 올리세요. 어떤 기기로 열어도 자동으로 그 사진이 나옵니다.</p>
+    <p class="admin-note">아래에서 올리는 사진은 이 기기에만 저장되며, photos 폴더 사진보다 우선합니다. 이름과 설명은 칸을 눌러 바로 고칠 수 있습니다. 사진과 이름은 <b>이 태블릿의 브라우저</b>에 저장되므로, 행사에 쓸 기기에서 미리 등록해 두세요.</p>
     <div class="row">
       <button class="btn btn-ghost" id="btnResetUsed">뽑힌 기록 초기화</button>
       <button class="btn btn-ghost" id="btnAdminClose">닫기</button>
@@ -429,88 +432,88 @@ p{margin:0;line-height:1.65;color:var(--text-dim);max-width:60ch}
 
 /* ================= 명단 ================= */
 var MALE = [
- ["원빈","한 번 보면 잊히지 않는 조각 같은 이목구비"],
- ["정우성","멀리서도 눈에 들어오는 시원한 눈매"],
- ["장동건","시대가 지나도 변하지 않는 정석 미남형"],
- ["강동원","현실감 없는 비율과 맑은 눈빛"],
- ["현빈","웃을 때 확 풀리는 다정한 눈웃음"],
- ["송중기","소년미와 단정함이 함께 있는 얼굴"],
- ["박보검","보는 사람 기분까지 좋아지는 선한 인상"],
  ["차은우","어느 각도에서도 무너지지 않는 균형"],
- ["이종석","길고 선명한 눈매의 도시적인 인상"],
- ["김수현","감정이 그대로 읽히는 깊은 눈"],
+ ["코르티스 건호","맑고 시원한 선의 요즘 얼굴"],
+ ["라이즈 원빈","웃으면 확 밝아지는 산뜻한 인상"],
+ ["송강","조용한데 시선이 머무는 하얀 인상"],
+ ["박지훈","다정하게 처진 눈매의 소년 같은 얼굴"],
+ ["황민현","비율 좋고 단정한 모범생 미남"],
+ ["이도현","선이 가는 얼굴에 눈빛이 깊은 인상"],
+ ["변우석","큰 키와 맑은 눈의 조합"],
  ["서강준","차분한데 눈에 확 들어오는 이목구비"],
  ["남주혁","시원하게 뻗은 라인과 긴 실루엣"],
- ["이민호","부드러움과 카리스마가 섞인 얼굴"],
- ["지창욱","선이 분명한 턱선과 단단한 인상"],
- ["이준기","섬세한 눈매의 화려한 분위기"],
- ["유연석","편안하게 잘생긴 옆집 형 같은 느낌"],
- ["박서준","웃는 순간 분위기가 밝아지는 인상"],
- ["김우빈","무심한 표정에도 남는 강한 존재감"],
- ["이도현","맑고 깨끗한 선의 요즘 미남형"],
- ["송강","조용한데 시선이 머무는 하얀 인상"],
- ["로운","산뜻하고 청량한 첫인상"],
- ["안효섭","큰 눈과 선명한 콧날의 조화"],
- ["정해인","웃을 때 순해지는 따뜻한 얼굴"],
- ["이제훈","단정하고 야무진 인상"],
- ["조인성","웃으면 무장해제되는 눈매"],
- ["소지섭","말 없이도 멋있는 묵직한 분위기"],
- ["주지훈","어깨와 키가 먼저 보이는 시원한 인상"],
- ["김재욱","선이 고운 세련된 얼굴"],
- ["옹성우","다정하게 처진 눈매의 강아지 상"],
- ["황민현","비율 좋고 단정한 모범생 미남"],
- ["뷔","이국적인 눈매의 강한 인상"],
- ["진","넓은 어깨와 환한 미소"],
- ["정국","웃을 때 확 살아나는 소년 같은 얼굴"],
+ ["공명","편안하고 훈훈한 옆집 형 같은 느낌"],
+ ["에이티즈 최산","강렬한 눈빛과 또렷한 윤곽"],
+ ["엔시티 재현","단정한 이목구비에 부드러운 분위기"],
+ ["강동원","현실감 없는 비율과 맑은 눈빛"],
+ ["백현","웃을 때 눈이 접히는 사랑스러운 인상"],
  ["카이","표정 하나로 분위기를 바꾸는 얼굴"],
- ["세훈","차가워 보이지만 웃으면 반전인 인상"],
- ["박형식","웃는 눈이 매력인 훈훈한 얼굴"],
+ ["정해인","웃을 때 순해지는 따뜻한 얼굴"],
+ ["송중기","소년미와 단정함이 함께 있는 얼굴"],
+ ["BTS 정국","웃을 때 확 살아나는 소년 같은 얼굴"],
+ ["허남준","진한 눈매의 이국적인 인상"],
+ ["안효섭","큰 눈과 선명한 콧날의 조화"],
+ ["현빈","웃을 때 확 풀리는 다정한 눈웃음"],
+ ["덱스","시원한 어깨와 서글서글한 인상"],
+ ["디오","동글한 눈매의 순하고 편안한 얼굴"],
+ ["이동욱","길고 날렵한 선의 세련된 얼굴"],
+ ["공유","웃으면 온도가 올라가는 넉넉한 인상"],
+ ["투어스 도훈","맑고 말간 첫인상"],
+ ["투모로우바이투게더 연준","가늘고 고운 선의 우아한 인상"],
+ ["육성재","웃는 눈이 매력인 훈훈한 얼굴"],
+ ["엔하이픈 성훈","또렷한 이목구비의 조각 같은 옆선"],
+ ["진영","단정하고 차분한 정석 미남형"],
+ ["이제훈","단정하고 야무진 인상"],
+ ["지창욱","선이 분명한 턱선과 단단한 인상"],
+ ["최현욱","장난기 있는 눈매의 생기 있는 얼굴"],
+ ["장동윤","수수하게 잘생긴 편안한 인상"],
  ["김선호","편안하고 다정한 눈웃음"],
- ["변우석","큰 키와 맑은 눈의 조합"],
- ["최우식","개성 있고 기억에 남는 얼굴"],
- ["임시완","나이를 잘 모르겠는 맑은 인상"]
+ ["김우빈","무심한 표정에도 남는 강한 존재감"],
+ ["우도환","눈빛이 강한 카리스마 있는 얼굴"],
+ ["임시완","나이를 잘 모르겠는 맑은 인상"],
+ ["BTS 진","넓은 어깨와 환한 미소"]
 ];
 var FEMALE = [
- ["김태희","한 번 더 돌아보게 되는 단정한 이목구비"],
- ["송혜교","부드럽고 은은하게 빛나는 얼굴"],
- ["전지현","어디서든 눈에 띄는 화려한 분위기"],
- ["손예진","웃을 때 가장 예쁜 다정한 눈매"],
- ["한가인","조용하고 고운 정석 미인형"],
- ["이영애","단아하고 품위 있는 인상"],
- ["김희선","시원하게 큰 눈과 또렷한 이목구비"],
- ["수지","웃으면 분위기가 환해지는 얼굴"],
- ["아이유","맑고 청량한 소녀 같은 인상"],
+ ["고윤정","시원한 눈매와 또렷한 윤곽"],
+ ["노윤서","꾸민 듯 안 꾸민 듯 자연스러운 분위기"],
+ ["아이유","웃을 때 환해지는 맑은 얼굴"],
+ ["소녀시대 윤아","곱고 단정한 정석 미인형"],
+ ["블랙핑크 지수","웃으면 분위기가 환해지는 단정한 미인형"],
  ["신민아","자연스럽고 사랑스러운 분위기"],
- ["박신혜","편안하면서 또렷한 이목구비"],
- ["한효주","웃을 때 따뜻해지는 순한 얼굴"],
- ["문채원","선이 고운 단정한 미인형"],
- ["정유미","꾸미지 않아도 예쁜 자연스러운 인상"],
- ["김지원","차분한데 시선이 머무는 얼굴"],
+ ["리센느 원이","선명한 이목구비의 화려한 인상"],
+ ["신예은","또렷한 눈매의 청순한 얼굴"],
+ ["아이브 안유진","밝고 환한 미소가 매력인 얼굴"],
+ ["잇지 유나","크고 맑은 눈의 인형 같은 인상"],
+ ["블랙핑크 제니","눈에 확 들어오는 화려한 분위기"],
+ ["엔믹스 설윤","부드러운 선의 사랑스러운 얼굴"],
+ ["아이들 미연","웃는 눈이 예쁜 화사한 인상"],
+ ["최예나","또렷한 이목구비의 밝은 분위기"],
+ ["아일릿 원희","하얗고 맑은 청순한 인상"],
+ ["에스파 닝닝","동그란 눈매의 사랑스러운 얼굴"],
+ ["에스파 카리나","또렷하고 화려한 이목구비"],
  ["박보영","보면 기분 좋아지는 사랑스러운 인상"],
- ["김유정","맑고 또렷한 눈매"],
- ["김소현","하얗고 깨끗한 청순한 인상"],
- ["이성경","시원한 라인의 세련된 분위기"],
- ["서현진","웃음이 예쁜 밝은 인상"],
- ["공효진","개성 있고 분위기 있는 얼굴"],
- ["한지민","곱고 단정한 미소"],
- ["김다미","기억에 남는 독특하고 예쁜 선"],
+ ["김지원","차분한데 시선이 머무는 얼굴"],
+ ["프로미스나인 백지헌","선이 고운 단정한 얼굴"],
+ ["블랙핑크 로제","선이 가늘고 고운 인상"],
+ ["르세라핌 김채원","웃을 때 눈이 접히는 화사한 얼굴"],
+ ["소녀시대 태연","작고 야무진 예쁜 얼굴"],
+ ["송혜교","부드럽고 은은하게 빛나는 얼굴"],
+ ["김태리","깊은 눈빛의 단단하고 고운 인상"],
  ["김고은","눈이 예쁜 개성 있는 얼굴"],
- ["장원영","비현실적인 비율과 큰 눈"],
- ["카리나","또렷하고 화려한 이목구비"],
- ["윈터","맑고 시원한 눈매"],
- ["지수","웃을 때 환해지는 단정한 미인형"],
- ["제니","눈에 확 들어오는 화려한 분위기"],
- ["로제","선이 가늘고 고운 인상"],
- ["리사","시원한 라인과 또렷한 눈매"],
- ["태연","작고 야무진 예쁜 얼굴"],
- ["나연","웃는 눈이 매력인 사랑스러운 인상"],
- ["사나","부드럽고 다정한 분위기"],
- ["츠위","단정하고 고운 이목구비"],
- ["아이린","정석에 가까운 균형 잡힌 얼굴"],
- ["조이","밝고 활기찬 예쁜 인상"],
- ["설현","또렷하고 시원한 이목구비"],
- ["혜리","웃으면 분위기가 살아나는 얼굴"],
- ["안유진","밝고 환한 미소가 매력인 얼굴"]
+ ["한소희","또렷한 이목구비의 인형 같은 선"],
+ ["수지","청순함과 화사함이 같이 있는 얼굴"],
+ ["신세경","크고 깊은 눈의 우아한 인상"],
+ ["프로미스나인 이채영","시원한 라인의 세련된 분위기"],
+ ["잇지 예지","강렬한 눈빛의 개성 있는 얼굴"],
+ ["아일릿 민주","맑고 투명한 소녀 같은 인상"],
+ ["문가영","곱고 단아한 미인형"],
+ ["츄","보는 사람까지 웃게 만드는 밝은 얼굴"],
+ ["뉴진스 해린","시원한 이목구비의 당당한 인상"],
+ ["노정의","또렷한 눈매의 산뜻한 얼굴"],
+ ["정채연","화사하고 사랑스러운 분위기"],
+ ["레드벨벳 아이린","정석에 가까운 균형 잡힌 얼굴"],
+ ["아이브 장원영","비현실적인 비율과 큰 눈"],
+ ["엔믹스 해원","맑고 시원한 눈매"]
 ];
 
 /* ================= 저장소 ================= */
@@ -559,6 +562,40 @@ function dbPut(id,dataURL){
   photos[id] = dataURL;
   if(!idb) return;
   try{ idb.transaction("p","readwrite").objectStore("p").put(dataURL,id); }catch(e){}
+}
+
+/* ============ 공용 사진 (photos/<이름>.jpg) ============ */
+var PHOTO_DIR = "photos/";
+var PHOTO_EXT = ["jpg","jpeg","png","webp","JPG","JPEG","PNG","WEBP"];
+function nameParts(name){
+  var t = String(name).trim().replace(/\s+/g," ");
+  var i = t.lastIndexOf(" ");
+  return (i > 0) ? { group: t.slice(0,i), short: t.slice(i+1), full: t }
+                 : { group: "", short: t, full: t };
+}
+function repoUrls(name){
+  var p = nameParts(name);
+  var bases = [p.full];
+  if(p.group){ bases.push(p.full.replace(/\s+/g,""), p.short); }
+  var out = [];
+  for(var i=0;i<bases.length;i++){
+    for(var j=0;j<PHOTO_EXT.length;j++){
+      out.push(PHOTO_DIR + encodeURIComponent(bases[i]) + "." + PHOTO_EXT[j]);
+    }
+  }
+  return out;
+}
+/* 기기에 등록한 사진이 있으면 그것을, 없으면 photos 폴더 사진을 씁니다. */
+function setPhoto(img, person, onFail){
+  if(photos[person.id]){ img.src = photos[person.id]; return "device"; }
+  var urls = repoUrls(person.name), i = 0;
+  img.onerror = function(){
+    i++;
+    if(i < urls.length){ img.src = urls[i]; }
+    else { img.onerror = null; if(onFail) onFail(); }
+  };
+  img.src = urls[0];
+  return "repo";
 }
 
 /* ================= 인물 ================= */
@@ -845,21 +882,24 @@ function finish(f, source, w, h){
   /* 결과 카드 */
   var frame = document.getElementById("resFrame");
   frame.innerHTML = "";
-  var url = photos[pick.id];
-  if(url){
-    var img = document.createElement("img");
-    img.src = url; img.alt = pick.name;
-    frame.appendChild(img);
-  }else{
+  var img = document.createElement("img");
+  img.alt = pick.name;
+  frame.appendChild(img);
+  setPhoto(img, pick, function(){
+    frame.innerHTML = "";
     var ini = document.createElement("div");
     ini.className = "initial";
     ini.textContent = pick.name.charAt(0);
     var hint = document.createElement("div");
     hint.className = "hint";
-    hint.textContent = "사진 자리 · 관리 화면에서 등록";
+    hint.textContent = "사진 자리 · photos 폴더 또는 관리 화면에서 등록";
     frame.appendChild(ini); frame.appendChild(hint);
-  }
-  document.getElementById("resName").textContent = pick.name;
+  });
+  var np = nameParts(pick.name);
+  var gEl = document.getElementById("resGroup");
+  gEl.textContent = np.group;
+  gEl.classList.toggle("off", !np.group);
+  document.getElementById("resName").textContent = np.short;
   document.getElementById("resWhy").textContent = pick.why;
 
   var pct = 87 + (hv >>> 8) % 12 + Math.round((hv % 10))/10;
@@ -932,14 +972,16 @@ function renderSlots(){
       e.target.value = "";
       if(file) shrink(file, function(url){ dbPut(p.id,url); renderSlots(); });
     });
-    if(photos[p.id]){
-      var im = document.createElement("img"); im.src = photos[p.id]; im.alt = p.name;
-      thumb.appendChild(im);
-    }else{
+    var im = document.createElement("img"); im.alt = p.name;
+    thumb.appendChild(im);
+    var src = setPhoto(im, p, function(){
+      thumb.innerHTML = "";
       var ph = document.createElement("div"); ph.className = "plus";
       ph.textContent = "＋ 사진";
-      thumb.appendChild(ph);
-    }
+      thumb.appendChild(ph); thumb.appendChild(fi);
+      thumb.classList.remove("has");
+    });
+    if(src === "device") thumb.classList.add("has");
     thumb.appendChild(fi);
 
     var no = document.createElement("div"); no.className = "no";
