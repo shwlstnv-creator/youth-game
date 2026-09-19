@@ -181,6 +181,8 @@ p{margin:0;line-height:1.65;color:var(--text-dim);max-width:60ch}
 .readout dt{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--text-dim);margin:0 0 4px}
 .readout dd{font-family:var(--mono);font-size:17px;margin:0;font-variant-numeric:tabular-nums}
 @media (max-width:520px){.readout{grid-template-columns:repeat(2,1fr)}}
+.ai-line{font-family:var(--mono);font-size:12px;color:var(--text-dim);letter-spacing:.04em}
+.print .runners{font-family:var(--mono);font-size:11.5px;color:#7A7061;margin:0}
 .status{font-family:var(--mono);font-size:13.5px;color:var(--amber);letter-spacing:.06em;min-height:1.2em}
 
 /* ---------- result ---------- */
@@ -354,6 +356,7 @@ p{margin:0;line-height:1.65;color:var(--text-dim);max-width:60ch}
       <div><dt>톤</dt><dd id="mTone">--</dd></div>
     </dl>
     <div class="status" id="status">얼굴이 사각형 안에 들어오면 촬영 버튼을 눌러주세요.</div>
+    <div class="ai-line" id="aiLine">AI 얼굴 분석 준비 중…</div>
     <input type="file" id="filePick" accept="image/*" capture="user" hidden>
     <div class="row">
       <button class="btn btn-primary" id="btnShoot" style="flex:2 1 100%">촬영</button>
@@ -376,6 +379,7 @@ p{margin:0;line-height:1.65;color:var(--text-dim);max-width:60ch}
         </div>
         <p class="why" id="resWhy"></p>
         <div class="tags" id="resTags"></div>
+        <p class="runners off" id="resRunners"></p>
         <div class="meta">
           <span id="resStamp"></span>
           <span class="pct-wrap"><span class="pct-label">닮은 정도</span><span class="pct" id="resPct">--%</span></span>
@@ -415,6 +419,7 @@ p{margin:0;line-height:1.65;color:var(--text-dim);max-width:60ch}
       </label>
     </div>
     <p class="admin-note" id="bulkReport"></p>
+    <div class="ai-line" id="aiLineAdmin"></div>
     <div class="slots" id="slots"></div>
     <p class="admin-note"><b>모든 기기에 함께 적용하려면</b> GitHub 저장소에 <span class="mono">photos</span> 폴더를 만들고 <span class="mono">차은우.jpg</span> 처럼 <b>이름과 똑같은 파일명</b>으로 사진을 올리세요. 어떤 기기로 열어도 자동으로 그 사진이 나옵니다.</p>
     <p class="admin-note">아래에서 올리는 사진은 이 기기에만 저장되며, photos 폴더 사진보다 우선합니다. 이름과 설명은 칸을 눌러 바로 고칠 수 있습니다. 사진과 이름은 <b>이 태블릿의 브라우저</b>에 저장되므로, 행사에 쓸 기기에서 미리 등록해 두세요.</p>
@@ -566,7 +571,7 @@ function dbPut(id,dataURL){
 
 /* ============ 공용 사진 (photos/<이름>.jpg) ============ */
 var PHOTO_DIR = "photos/";
-var PHOTO_EXT = ["jpg","jpeg","png","webp","JPG","JPEG","PNG","WEBP"];
+var PHOTO_EXT = ["jpg","jpeg","png","webp","JPG","PNG"];
 function nameParts(name){
   var t = String(name).trim().replace(/\s+/g," ");
   var i = t.lastIndexOf(" ");
@@ -576,7 +581,7 @@ function nameParts(name){
 function repoUrls(name){
   var p = nameParts(name);
   var bases = [p.full];
-  if(p.group){ bases.push(p.full.replace(/\s+/g,""), p.short); }
+  if(p.group){ bases.push(p.short); }
   var out = [];
   for(var i=0;i<bases.length;i++){
     for(var j=0;j<PHOTO_EXT.length;j++){
@@ -613,6 +618,168 @@ var byId = {};
 function remaining(g){
   var used = store.used[g];
   return people[g].filter(function(p){ return used.indexOf(p.id)<0; });
+}
+
+/* ================= AI 얼굴 분석 ================= */
+var AI = { state:"off", nets:false, desc:{}, done:0, total:0, err:"" };
+var AI_LIB = ["lib/face-api.js","https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/dist/face-api.js"];
+var AI_MODEL_LOCAL = "models";
+var AI_MODEL_CDN = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.15/model";
+var AI_CACHE_KEY = "dalmun.ai.v1";
+
+function aiLine(msg){
+  var a = document.getElementById("aiLine"), b = document.getElementById("aiLineAdmin");
+  if(a) a.textContent = msg;
+  if(b) b.textContent = msg;
+}
+function loadScript(src){
+  return new Promise(function(res,rej){
+    var el = document.createElement("script");
+    el.src = src; el.async = true;
+    el.onload = function(){ res(); };
+    el.onerror = function(){ rej(new Error("script " + src)); };
+    document.head.appendChild(el);
+  });
+}
+function loadPhotoImage(person){
+  return new Promise(function(res){
+    var im = new Image();
+    if(photos[person.id]){
+      im.onload = function(){ res(im); };
+      im.onerror = function(){ res(null); };
+      im.src = photos[person.id];
+      return;
+    }
+    var urls = repoUrls(person.name), i = 0;
+    im.onload = function(){ res(im); };
+    im.onerror = function(){ i++; if(i < urls.length){ im.src = urls[i]; } else { res(null); } };
+    im.src = urls[0];
+  });
+}
+function aiCacheLoad(){ try{ return JSON.parse(localStorage.getItem(AI_CACHE_KEY)) || {}; }catch(e){ return {}; } }
+function aiCacheSave(c){ try{ localStorage.setItem(AI_CACHE_KEY, JSON.stringify(c)); }catch(e){} }
+function aiKey(p){ return p.id + "|" + p.name + (photos[p.id] ? "|dev" : ""); }
+
+function detectDescriptor(input){
+  var opts = new faceapi.TinyFaceDetectorOptions({ inputSize:416, scoreThreshold:0.3 });
+  return faceapi.detectSingleFace(input, opts).withFaceLandmarks().withFaceDescriptor()
+    .then(function(r){ return r ? Array.prototype.slice.call(r.descriptor) : null; });
+}
+
+/* 그래픽 가속(webgl)을 먼저, 안 되면 cpu로 */
+function tfReady(){
+  var tf = window.faceapi && faceapi.tf;
+  if(!tf || !tf.setBackend) return Promise.resolve();
+  function cpu(){ return tf.setBackend("cpu").then(function(){ return tf.ready(); }); }
+  return tf.setBackend("webgl").then(function(ok){
+    return ok ? tf.ready() : cpu();
+  }).catch(cpu).catch(function(){});
+}
+
+function initAI(){
+  if(AI.state !== "off") return;
+  AI.state = "loading";
+  aiLine("AI 얼굴 분석 준비 중…");
+  var modelUrl = AI_MODEL_CDN;
+  fetch(AI_MODEL_LOCAL + "/tiny_face_detector_model-weights_manifest.json")
+  .then(function(r){ if(r.ok) modelUrl = AI_MODEL_LOCAL; }, function(){})
+  .then(function(){ return loadScript(AI_LIB[0]).catch(function(){ return loadScript(AI_LIB[1]); }); })
+  .then(function(){
+    if(!window.faceapi) throw new Error("faceapi 없음");
+    return tfReady();
+  })
+  .then(function(){
+    return Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri(modelUrl),
+      faceapi.nets.faceLandmark68Net.loadFromUri(modelUrl),
+      faceapi.nets.faceRecognitionNet.loadFromUri(modelUrl)
+    ]);
+  })
+  .then(function(){ AI.nets = true; AI.state = "indexing"; return indexAll(); })
+  .catch(function(e){
+    AI.state = "failed"; AI.err = String((e && e.message) || e);
+    aiLine("AI 분석을 쓸 수 없어 기본 분석으로 진행합니다.");
+  });
+}
+
+/* 연예인 사진을 한 장씩 분석해 특징값을 저장 (한 번만, 이후 캐시) */
+function indexAll(){
+  var list = people.m.concat(people.f);
+  AI.total = list.length; AI.done = 0;
+  var cache = aiCacheLoad(), dirty = false, i = 0;
+  return new Promise(function(resolve){
+    function tick(){
+      if(AI.done % 4 === 0 || AI.done === AI.total){
+        aiLine("AI 얼굴 분석 준비 중 · 사진 " + AI.done + "/" + AI.total + " 확인");
+      }
+    }
+    function step(){
+      if(i >= list.length){
+        if(dirty) aiCacheSave(cache);
+        AI.state = "ready";
+        var n = 0; for(var k in AI.desc){ if(AI.desc.hasOwnProperty(k)) n++; }
+        aiLine(n >= 4
+          ? "AI 얼굴 분석 사용 · 인물 " + n + "명 대조 가능"
+          : "사진이 " + n + "명뿐이라 기본 분석으로 진행합니다 (photos 폴더에 사진을 올려주세요)");
+        resolve(); return;
+      }
+      var p = list[i++];
+      var key = aiKey(p);
+      if(cache.hasOwnProperty(key)){
+        if(cache[key]) AI.desc[p.id] = cache[key];
+        AI.done++; tick(); setTimeout(step, 0); return;
+      }
+      loadPhotoImage(p).then(function(img){
+        if(!img){ cache[key] = 0; dirty = true; AI.done++; tick(); setTimeout(step, 0); return; }
+        return detectDescriptor(img).then(function(d){
+          if(d){
+            AI.desc[p.id] = d;
+            cache[key] = d.map(function(x){ return Math.round(x * 10000) / 10000; });
+          }else{
+            cache[key] = 0;
+          }
+          dirty = true;
+          AI.done++; tick(); setTimeout(step, 0);
+        });
+      }).catch(function(){ AI.done++; tick(); setTimeout(step, 0); });
+    }
+    step();
+  });
+}
+
+/* 새로 올린 사진 하나만 다시 분석 */
+function reindexOne(p){
+  if(!AI.nets || !window.faceapi) return;
+  delete AI.desc[p.id];
+  loadPhotoImage(p).then(function(img){
+    if(!img) return;
+    return detectDescriptor(img).then(function(d){
+      if(!d) return;
+      AI.desc[p.id] = d;
+      var c = aiCacheLoad();
+      c[aiKey(p)] = d.map(function(x){ return Math.round(x * 10000) / 10000; });
+      aiCacheSave(c);
+    });
+  }).catch(function(){});
+}
+
+/* 찍은 얼굴과 남은 인물들을 대조 */
+function aiMatch(source, g){
+  if(!AI.nets || !window.faceapi) return Promise.resolve(null);
+  if(AI.state !== "ready" && AI.state !== "indexing") return Promise.resolve(null);
+  return detectDescriptor(source).then(function(d){
+    if(!d) return { noFace:true, ranked:[] };
+    var pool = remaining(g), out = [];
+    for(var i=0;i<pool.length;i++){
+      var c = AI.desc[pool[i].id];
+      if(!c) continue;
+      var sum = 0;
+      for(var k=0;k<128;k++){ var dv = d[k] - c[k]; sum += dv * dv; }
+      out.push({ person:pool[i], dist:Math.sqrt(sum) });
+    }
+    out.sort(function(a,b){ return a.dist - b.dist; });
+    return { noFace:false, ranked:out };
+  }).catch(function(){ return null; });
 }
 
 /* ================= 화면 전환 ================= */
@@ -846,26 +1013,29 @@ function develop(source, w, h){
   var f = analyzeFrom(source, w, h);
   stage.classList.add("scanning","mono");
   btnShoot.textContent = "현상 중…";
-  var steps = [
-    ["얼굴 윤곽을 읽는 중", 520],
-    ["좌우 대칭 측정", 520],
-    ["명암·톤 분석", 560],
-    ["인물 대조", 620]
-  ];
+  setReadout(f,["mSym","mCon","mEdge","mTone"]);
+
+  var useAI = (AI.nets && (AI.state === "ready" || AI.state === "indexing"));
+  var steps = useAI
+    ? [["얼굴 특징점을 찾는 중",700],["윤곽·눈·코 비율 측정",700],["인물 사진과 대조",900]]
+    : [["얼굴 윤곽을 읽는 중",520],["좌우 대칭 측정",520],["명암·톤 분석",560],["인물 대조",620]];
   var i = 0;
-  (function step(){
-    if(i>=steps.length){
-      stage.classList.remove("scanning");
-      setTimeout(function(){ finish(f, source, w, h); }, 220);
-      return;
-    }
+  (function tellStep(){
+    if(i >= steps.length) return;
     statusEl.textContent = steps[i][0] + " …";
-    if(i===0) setReadout(f,["mSym","mCon","mEdge","mTone"]);
-    setTimeout(function(){ i++; step(); }, steps[i][1]);
+    var wait = steps[i][1]; i++;
+    setTimeout(tellStep, wait);
   })();
+
+  var minWait = new Promise(function(r){ setTimeout(r, useAI ? 2300 : 2200); });
+  var job = useAI ? aiMatch(source, gender) : Promise.resolve(null);
+  Promise.all([job, minWait]).then(function(res){
+    stage.classList.remove("scanning");
+    setTimeout(function(){ finish(f, res[0], source, w, h); }, 180);
+  });
 }
 
-function finish(f, source, w, h){
+function finish(f, ai, source, w, h){
   var pool = remaining(gender);
   var eyebrow = document.getElementById("resEyebrow");
   if(pool.length===0){
@@ -875,7 +1045,19 @@ function finish(f, source, w, h){
     return;
   }
   var hv = hashOf(f);
-  var pick = pool[hv % pool.length];
+  var pick = null, pct = null, byAI = false, runners = [];
+  if(ai && ai.ranked && ai.ranked.length){
+    pick = ai.ranked[0].person;
+    byAI = true;
+    pct = 99 - (ai.ranked[0].dist - 0.45) * 30;
+    if(pct > 99.2) pct = 99.2;
+    if(pct < 87) pct = 87 + (hv % 20) / 10;
+    runners = ai.ranked.slice(1,3).map(function(r){ return nameParts(r.person.name).short; });
+  }else{
+    pick = pool[hv % pool.length];
+    pct = 87 + (hv >>> 8) % 12 + Math.round(hv % 10) / 10;
+    if(pct > 99.4) pct = 99.4;
+  }
   store.used[gender].push(pick.id);
   save();
 
@@ -902,10 +1084,19 @@ function finish(f, source, w, h){
   document.getElementById("resName").textContent = np.short;
   document.getElementById("resWhy").textContent = pick.why;
 
-  var pct = 87 + (hv >>> 8) % 12 + Math.round((hv % 10))/10;
-  if(pct>99.4) pct = 99.4;
   document.getElementById("resPct").textContent = pct.toFixed(1) + "%";
-  eyebrow.textContent = "현상 완료 · " + (gender==="m"?"남성":"여성") + " " + pick.no + "번";
+  eyebrow.textContent = "현상 완료 · " + (byAI ? "AI 얼굴 분석" : "기본 분석")
+    + " · " + (gender==="m"?"남성":"여성") + " " + pick.no + "번";
+  var rn = document.getElementById("resRunners");
+  if(runners.length){
+    rn.textContent = "그다음으로 가까운 인물 · " + runners.join(", ");
+    rn.classList.remove("off");
+  }else{
+    rn.classList.add("off");
+  }
+  if(ai && ai.noFace){
+    statusEl.textContent = "얼굴을 찾지 못해 기본 분석으로 진행했습니다.";
+  }
   document.getElementById("resStamp").textContent =
     "남은 인물 " + remaining(gender).length + "명";
 
@@ -970,7 +1161,7 @@ function renderSlots(){
     fi.addEventListener("change", function(e){
       var file = e.target.files && e.target.files[0];
       e.target.value = "";
-      if(file) shrink(file, function(url){ dbPut(p.id,url); renderSlots(); });
+      if(file) shrink(file, function(url){ dbPut(p.id,url); reindexOne(p); renderSlots(); });
     });
     var im = document.createElement("img"); im.alt = p.name;
     thumb.appendChild(im);
@@ -1034,7 +1225,7 @@ function bulk(files){
     var p = index[base];
     if(!p){ missed.push(file.name); pending--; if(!pending) report(); return; }
     shrink(file, function(url){
-      dbPut(p.id,url); matched.push(p.name);
+      dbPut(p.id,url); reindexOne(p); matched.push(p.name);
       pending--;
       if(!pending){ renderSlots(); report(); }
     });
@@ -1123,6 +1314,7 @@ document.getElementById("btnHome").addEventListener("click", function(){ go("sta
 openDB().then(function(db){ idb = db; return dbAll(); }).then(function(){
   paintNote(); paintCounts();
   if(current==="admin") renderSlots();
+  setTimeout(initAI, 400);
 });
 paintNote(); paintCounts();
 })();
